@@ -61,11 +61,12 @@ $ wls --help
 Usage: wls [OPTIONS] <URLS>...
 
 Arguments:
-  <URLS>...  
+  <URLS>...  Domains/sitemaps to crawl
 
 Options:
-  -T, --timeout <TIMEOUT>  [default: 30]
-  -w, --wait <WAIT>        [default: 0]
-  -v, --verbose            
+  -T, --timeout <SECONDS>  Maximum response time [default: 30]
+  -w, --wait <SECONDS>     Delay between requests [default: 0]
+  -v, --verbose            Enable logs
   -h, --help               Print help
+  -V, --version            Print version
 ```

@@ -8,7 +8,7 @@ use crate::{robots::parse_robots, sitemap::parse_sitemap};
 
 static USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
 
-pub struct SitemapCrawler {
+pub(crate) struct SitemapCrawler {
     client: Client,
     urls: HashSet<Url>,
     visited: HashSet<Url>,
@@ -16,7 +16,7 @@ pub struct SitemapCrawler {
 }
 
 impl SitemapCrawler {
-    pub fn new(timeout: Duration, wait: Duration) -> Self {
+    pub(crate) fn new(timeout: Duration, wait: Duration) -> Self {
         Self {
             client: ClientBuilder::new()
                 .user_agent(USER_AGENT)
@@ -47,7 +47,7 @@ impl SitemapCrawler {
     }
 
     #[instrument(skip_all, fields(%url))]
-    pub fn robotstxt(&mut self, url: Url) -> Result<()> {
+    pub(crate) fn robotstxt(&mut self, url: Url) -> Result<()> {
         if let Some(body) = self.visit(&url)? {
             let sitemaps = parse_robots(&body);
             if sitemaps.len() > 0 {
@@ -64,7 +64,7 @@ impl SitemapCrawler {
     }
 
     #[instrument(skip_all, fields(%url))]
-    pub fn sitemap(&mut self, url: Url) -> Result<()> {
+    pub(crate) fn sitemap(&mut self, url: Url) -> Result<()> {
         if let Some(body) = self.visit(&url)? {
             let (urls, sitemaps) = parse_sitemap(&body)?;
 
@@ -87,7 +87,7 @@ impl SitemapCrawler {
         Ok(())
     }
 
-    pub fn urls(self) -> Vec<Url> {
+    pub(crate) fn urls(self) -> Vec<Url> {
         let mut x: Vec<_> = self.urls.into_iter().collect();
         x.sort();
         x

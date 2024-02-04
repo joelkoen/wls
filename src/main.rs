@@ -14,16 +14,22 @@ mod crawler;
 mod robots;
 mod sitemap;
 
+// NOTE: update README with changes to --help
 #[derive(Debug, Parser)]
+#[command(version)]
 struct Cli {
+    /// Domains/sitemaps to crawl
     #[arg(required = true)]
     urls: Vec<String>,
 
-    #[arg(short = 'T', long, default_value_t = 30)]
+    /// Maximum response time
+    #[arg(short = 'T', long, default_value_t = 30, value_name = "SECONDS")]
     timeout: u64,
-    #[arg(short, long, default_value_t = 0)]
+    /// Delay between requests
+    #[arg(short, long, default_value_t = 0, value_name = "SECONDS")]
     wait: u64,
 
+    /// Enable logs
     #[arg(short, long)]
     verbose: bool,
 }
