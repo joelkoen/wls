@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, thread::sleep, time::Duration};
 
 use anyhow::{bail, Result};
 use reqwest::blocking::{Client, ClientBuilder};
@@ -12,14 +12,20 @@ pub struct SitemapCrawler {
     client: Client,
     urls: HashSet<Url>,
     visited: HashSet<Url>,
+    wait: Duration,
 }
 
 impl SitemapCrawler {
-    pub fn new() -> Self {
+    pub fn new(timeout: Duration, wait: Duration) -> Self {
         Self {
-            client: ClientBuilder::new().user_agent(USER_AGENT).build().unwrap(),
+            client: ClientBuilder::new()
+                .user_agent(USER_AGENT)
+                .timeout(Some(timeout))
+                .build()
+                .unwrap(),
             urls: HashSet::new(),
             visited: HashSet::new(),
+            wait,
         }
     }
 
@@ -29,13 +35,14 @@ impl SitemapCrawler {
             Ok(None)
         } else {
             self.visited.insert(url.clone());
-            Ok(Some(
-                self.client
-                    .get(url.clone())
-                    .send()?
-                    .error_for_status()?
-                    .text()?,
-            ))
+            let body = self
+                .client
+                .get(url.clone())
+                .send()?
+                .error_for_status()?
+                .text()?;
+            sleep(self.wait);
+            Ok(Some(body))
         }
     }
 

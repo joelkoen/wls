@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate tracing;
 
-use std::io;
+use std::{io, time::Duration};
 
 use anyhow::{Context, Result};
 use clap::Parser;
@@ -18,6 +18,11 @@ mod sitemap;
 struct Cli {
     #[arg(required = true)]
     urls: Vec<String>,
+
+    #[arg(short = 'T', long, default_value_t = 30)]
+    timeout: u64,
+    #[arg(short, long, default_value_t = 0)]
+    wait: u64,
 
     #[arg(short, long)]
     verbose: bool,
@@ -52,7 +57,10 @@ fn main() -> Result<()> {
     }
     debug!("{:#?}", parsed);
 
-    let mut crawler = SitemapCrawler::new();
+    let mut crawler = SitemapCrawler::new(
+        Duration::from_secs(cli.timeout),
+        Duration::from_secs(cli.wait),
+    );
     for url in parsed {
         if url.path() == "/robots.txt" {
             crawler.robotstxt(url)?;
