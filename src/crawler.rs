@@ -1,10 +1,12 @@
 use std::collections::HashSet;
 
 use anyhow::Result;
-use reqwest::blocking::Client;
+use reqwest::blocking::{Client, ClientBuilder};
 use url::Url;
 
 use crate::{robots::parse_robots, sitemap::parse_sitemap};
+
+static USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
 
 pub struct SitemapCrawler {
     client: Client,
@@ -15,7 +17,7 @@ pub struct SitemapCrawler {
 impl SitemapCrawler {
     pub fn new() -> Self {
         Self {
-            client: Client::new(),
+            client: ClientBuilder::new().user_agent(USER_AGENT).build().unwrap(),
             urls: HashSet::new(),
             visited: HashSet::new(),
         }
