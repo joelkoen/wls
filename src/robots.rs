@@ -25,6 +25,8 @@ impl RobotsParseHandler for RobotsSitemapHandler {
     fn handle_sitemap(&mut self, _: u32, value: &str) {
         if let Some(url) = Url::parse(value).ok() {
             self.sitemaps.push(url)
+        } else {
+            error!("Failed to parse URL: {value}")
         }
     }
 

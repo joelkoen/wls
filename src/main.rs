@@ -1,9 +1,11 @@
 #[macro_use]
-extern crate log;
+extern crate tracing;
+
+use std::io;
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use env_logger::Env;
+use tracing::level_filters::LevelFilter;
 use url::Url;
 
 use crate::crawler::SitemapCrawler;
@@ -17,21 +19,25 @@ struct Cli {
     #[arg(required = true)]
     urls: Vec<String>,
 
-    #[arg(short, long, group = "log")]
-    quiet: bool,
-    #[arg(short, long, group = "log")]
+    #[arg(short, long)]
     verbose: bool,
 }
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    env_logger::init_from_env(Env::new().default_filter_or(if cli.verbose {
-        "debug"
-    } else if cli.quiet {
-        "error"
-    } else {
-        "info"
-    }));
+    tracing_subscriber::fmt()
+        .pretty()
+        .without_time()
+        .with_file(false)
+        .with_line_number(false)
+        .with_level(false)
+        .with_target(false)
+        .with_max_level(match cli.verbose {
+            true => LevelFilter::INFO,
+            false => LevelFilter::WARN,
+        })
+        .with_writer(io::stderr)
+        .init();
     debug!("{:#?}", cli);
 
     let mut parsed = Vec::new();
@@ -48,18 +54,21 @@ fn main() -> Result<()> {
 
     let mut crawler = SitemapCrawler::new();
     for url in parsed {
-        info!("Crawling {url}");
         if url.path() == "/robots.txt" {
-            crawler.crawl_robots(url)?;
+            crawler.robotstxt(url)?;
         } else {
-            crawler.crawl_sitemap(url)?;
+            crawler.sitemap(url)?;
         }
     }
 
     let urls = crawler.urls();
-    info!("Found {} URLs", urls.len());
     let urls: Vec<_> = urls.iter().map(|x| x.as_str()).collect();
-    println!("{}", urls.join("\n"));
+    if urls.len() > 0 {
+        info!("Found {} URLs", urls.len());
+        println!("{}", urls.join("\n"));
+    } else {
+        error!("Found 0 URLs");
+    }
 
     Ok(())
 }

@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use reqwest::blocking::{Client, ClientBuilder};
 use url::Url;
 
@@ -23,42 +23,58 @@ impl SitemapCrawler {
         }
     }
 
-    fn get(&mut self, url: Url) -> Result<String> {
-        Ok(self.client.get(url).send()?.error_for_status()?.text()?)
+    fn visit(&mut self, url: &Url) -> Result<Option<String>> {
+        if self.visited.contains(&url) {
+            warn!("Already visited");
+            Ok(None)
+        } else {
+            self.visited.insert(url.clone());
+            Ok(Some(
+                self.client
+                    .get(url.clone())
+                    .send()?
+                    .error_for_status()?
+                    .text()?,
+            ))
+        }
     }
 
-    pub fn crawl_robots(&mut self, url: Url) -> Result<()> {
-        if self.visited.contains(&url) {
-            warn!("{url} has already been visited");
-            return Ok(());
-        }
-
-        let sitemaps = parse_robots(&self.get(url.clone())?);
-        for sitemap in sitemaps {
-            info!("{sitemap} (from {url})");
-            self.crawl_sitemap(sitemap)?;
+    #[instrument(skip_all, fields(%url))]
+    pub fn robotstxt(&mut self, url: Url) -> Result<()> {
+        if let Some(body) = self.visit(&url)? {
+            let sitemaps = parse_robots(&body);
+            if sitemaps.len() > 0 {
+                info!("Found {} sitemaps", sitemaps.len());
+                for sitemap in sitemaps {
+                    self.sitemap(sitemap)?;
+                }
+            } else {
+                bail!("Found 0 sitemaps");
+            }
         }
 
         Ok(())
     }
 
-    pub fn crawl_sitemap(&mut self, url: Url) -> Result<()> {
-        if self.visited.contains(&url) {
-            warn!("{url} has already been visited");
-            return Ok(());
-        }
+    #[instrument(skip_all, fields(%url))]
+    pub fn sitemap(&mut self, url: Url) -> Result<()> {
+        if let Some(body) = self.visit(&url)? {
+            let (urls, sitemaps) = parse_sitemap(&body)?;
 
-        let (urls, sitemaps) = parse_sitemap(&self.get(url.clone())?)?;
-        self.visited.insert(url.clone());
+            if urls.len() > 0 && sitemaps.len() > 0 {
+                info!("Found {} URLs and {} sitemaps", urls.len(), sitemaps.len());
+            } else if urls.len() > 0 {
+                info!("Found {} URLs", urls.len());
+            } else if sitemaps.len() > 0 {
+                info!("Found {} sitemaps", sitemaps.len());
+            } else {
+                warn!("Nothing found");
+            }
 
-        if urls.len() > 0 {
-            info!("Found {} URLs", urls.len());
             self.urls.extend(urls);
-        }
-
-        for sitemap in sitemaps {
-            info!("{sitemap} (from {url})");
-            self.crawl_sitemap(sitemap)?;
+            for sitemap in sitemaps {
+                self.sitemap(sitemap)?;
+            }
         }
 
         Ok(())
