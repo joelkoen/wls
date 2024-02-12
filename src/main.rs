@@ -14,6 +14,8 @@ mod crawler;
 mod robots;
 mod sitemap;
 
+static USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
+
 // NOTE: update README with changes to --help
 #[derive(Debug, Parser)]
 #[command(version)]
@@ -21,6 +23,10 @@ struct Cli {
     /// Domains/sitemaps to crawl
     #[arg(required = true)]
     urls: Vec<String>,
+
+    /// Browser to identify as
+    #[arg(short = 'U', long, default_value = USER_AGENT)]
+    user_agent: String,
 
     /// Maximum response time
     #[arg(short = 'T', long, default_value_t = 30, value_name = "SECONDS")]
@@ -64,6 +70,7 @@ fn main() -> Result<()> {
     debug!("{:#?}", parsed);
 
     let mut crawler = SitemapCrawler::new(
+        &cli.user_agent,
         Duration::from_secs(cli.timeout),
         Duration::from_secs(cli.wait),
     );

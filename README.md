@@ -64,9 +64,10 @@ Arguments:
   <URLS>...  Domains/sitemaps to crawl
 
 Options:
-  -T, --timeout <SECONDS>  Maximum response time [default: 30]
-  -w, --wait <SECONDS>     Delay between requests [default: 0]
-  -v, --verbose            Enable logs
-  -h, --help               Print help
-  -V, --version            Print version
+  -U, --user-agent <USER_AGENT>  Browser to identify as [default: wls/0.1.0]
+  -T, --timeout <SECONDS>        Maximum response time [default: 30]
+  -w, --wait <SECONDS>           Delay between requests [default: 0]
+  -v, --verbose                  Enable logs
+  -h, --help                     Print help
+  -V, --version                  Print version
 ```

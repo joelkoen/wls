@@ -6,8 +6,6 @@ use url::Url;
 
 use crate::{robots::parse_robots, sitemap::parse_sitemap};
 
-static USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
-
 pub(crate) struct SitemapCrawler {
     agent: Agent,
     urls: HashSet<Url>,
@@ -16,10 +14,10 @@ pub(crate) struct SitemapCrawler {
 }
 
 impl SitemapCrawler {
-    pub(crate) fn new(timeout: Duration, wait: Duration) -> Self {
+    pub(crate) fn new(user_agent: &str, timeout: Duration, wait: Duration) -> Self {
         Self {
             agent: AgentBuilder::new()
-                .user_agent(USER_AGENT)
+                .user_agent(user_agent)
                 .timeout(timeout)
                 .build(),
             urls: HashSet::new(),
