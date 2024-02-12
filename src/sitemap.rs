@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use color_eyre::eyre::{bail, Result};
 use sitemap::reader::{SiteMapEntity, SiteMapReader};
 use url::Url;
 

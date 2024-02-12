@@ -1,6 +1,6 @@
 use std::{collections::HashSet, thread::sleep, time::Duration};
 
-use anyhow::{bail, Result};
+use color_eyre::eyre::{bail, Result};
 use ureq::{Agent, AgentBuilder};
 use url::Url;
 

@@ -3,9 +3,11 @@ extern crate tracing;
 
 use std::{io, time::Duration};
 
-use anyhow::{Context, Result};
 use clap::Parser;
+use color_eyre::eyre::{Context, Result};
 use tracing::level_filters::LevelFilter;
+use tracing_error::ErrorLayer;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, Layer};
 use url::Url;
 
 use crate::crawler::SitemapCrawler;
@@ -42,20 +44,25 @@ struct Cli {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    tracing_subscriber::fmt()
-        .pretty()
-        .without_time()
-        .with_file(false)
-        .with_line_number(false)
-        .with_level(false)
-        .with_target(false)
-        .with_max_level(match cli.verbose {
-            true => LevelFilter::INFO,
-            false => LevelFilter::WARN,
-        })
-        .with_writer(io::stderr)
+
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::fmt::layer()
+                .pretty()
+                .without_time()
+                .with_file(false)
+                .with_line_number(false)
+                .with_level(false)
+                .with_target(false)
+                .with_writer(io::stderr)
+                .with_filter(match cli.verbose {
+                    true => LevelFilter::INFO,
+                    false => LevelFilter::WARN,
+                }),
+        )
+        .with(ErrorLayer::default())
         .init();
-    debug!("{:#?}", cli);
+    color_eyre::install()?;
 
     let mut parsed = Vec::new();
     for url in cli.urls {
@@ -65,7 +72,7 @@ fn main() -> Result<()> {
             // domain shorthand
             format!("https://{url}/robots.txt")
         };
-        parsed.push(Url::parse(&url).with_context(|| format!("Failed to parse URL: {url}"))?);
+        parsed.push(Url::parse(&url).wrap_err_with(|| format!("Failed to parse URL: {url}"))?);
     }
     debug!("{:#?}", parsed);
 

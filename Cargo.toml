@@ -16,9 +16,11 @@ categories = ["command-line-utilities"]
 [dependencies]
 anyhow = "1.0.79"
 clap = { version = "4.4.18", features = ["cargo", "derive"] }
+color-eyre = { version = "0.6.2", features = ["capture-spantrace"] }
 robotstxt = "0.3.0"
 sitemap = "0.4.1"
 tracing = "0.1.40"
+tracing-error = "0.2.0"
 tracing-subscriber = "0.3.18"
 ureq = { version = "2.9.5", features = ["charset"] }
 url = "2.5.0"
