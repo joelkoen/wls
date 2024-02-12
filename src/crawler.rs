@@ -1,7 +1,7 @@
 use std::{collections::HashSet, thread::sleep, time::Duration};
 
 use anyhow::{bail, Result};
-use reqwest::blocking::{Client, ClientBuilder};
+use ureq::{Agent, AgentBuilder};
 use url::Url;
 
 use crate::{robots::parse_robots, sitemap::parse_sitemap};
@@ -9,7 +9,7 @@ use crate::{robots::parse_robots, sitemap::parse_sitemap};
 static USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
 
 pub(crate) struct SitemapCrawler {
-    client: Client,
+    agent: Agent,
     urls: HashSet<Url>,
     visited: HashSet<Url>,
     wait: Duration,
@@ -18,11 +18,10 @@ pub(crate) struct SitemapCrawler {
 impl SitemapCrawler {
     pub(crate) fn new(timeout: Duration, wait: Duration) -> Self {
         Self {
-            client: ClientBuilder::new()
+            agent: AgentBuilder::new()
                 .user_agent(USER_AGENT)
-                .timeout(Some(timeout))
-                .build()
-                .unwrap(),
+                .timeout(timeout)
+                .build(),
             urls: HashSet::new(),
             visited: HashSet::new(),
             wait,
@@ -35,12 +34,7 @@ impl SitemapCrawler {
             Ok(None)
         } else {
             self.visited.insert(url.clone());
-            let body = self
-                .client
-                .get(url.clone())
-                .send()?
-                .error_for_status()?
-                .text()?;
+            let body = self.agent.get(url.as_str()).call()?.into_string()?;
             sleep(self.wait);
             Ok(Some(body))
         }
