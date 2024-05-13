@@ -57,14 +57,15 @@ $ wls -v docs.rs
 More options are available too:
 
 ```
-$ wls --help
 Usage: wls [OPTIONS] <URLS>...
 
 Arguments:
   <URLS>...  Domains/sitemaps to crawl
 
 Options:
-  -U, --user-agent <USER_AGENT>  Browser to identify as [default: wls/0.1.0]
+  -c, --cookies                  Enable cookies while crawling
+  -k, --insecure                 Disable certificate verification
+  -U, --user-agent <USER_AGENT>  Browser to identify as [default: wls/0.2.0]
   -T, --timeout <SECONDS>        Maximum response time [default: 30]
   -w, --wait <SECONDS>           Delay between requests [default: 0]
   -v, --verbose                  Enable logs
