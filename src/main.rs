@@ -5,6 +5,7 @@ use std::{io, time::Duration};
 
 use clap::Parser;
 use color_eyre::eyre::{Context, Result};
+use reqwest::blocking::ClientBuilder;
 use tracing::level_filters::LevelFilter;
 use tracing_error::ErrorLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, Layer};
@@ -26,6 +27,12 @@ struct Cli {
     #[arg(required = true)]
     urls: Vec<String>,
 
+    /// Enable cookies while crawling
+    #[arg(short, long)]
+    cookies: bool,
+    /// Disable certificate verification
+    #[arg(short = 'k', long)]
+    insecure: bool,
     /// Browser to identify as
     #[arg(short = 'U', long, default_value = USER_AGENT)]
     user_agent: String,
@@ -76,11 +83,13 @@ fn main() -> Result<()> {
     }
     debug!("{:#?}", parsed);
 
-    let mut crawler = SitemapCrawler::new(
-        &cli.user_agent,
-        Duration::from_secs(cli.timeout),
-        Duration::from_secs(cli.wait),
-    );
+    let client = ClientBuilder::new()
+        .cookie_store(cli.cookies)
+        .danger_accept_invalid_certs(cli.insecure)
+        .user_agent(cli.user_agent)
+        .timeout(Duration::from_secs(cli.timeout))
+        .build()?;
+    let mut crawler = SitemapCrawler::new(client, Duration::from_secs(cli.wait));
     for url in parsed {
         if url.path() == "/robots.txt" {
             crawler.robotstxt(url)?;

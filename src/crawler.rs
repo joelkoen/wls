@@ -1,25 +1,22 @@
 use std::{collections::HashSet, thread::sleep, time::Duration};
 
 use color_eyre::eyre::{bail, Result};
-use ureq::{Agent, AgentBuilder};
+use reqwest::blocking::Client;
 use url::Url;
 
 use crate::{robots::parse_robots, sitemap::parse_sitemap};
 
 pub(crate) struct SitemapCrawler {
-    agent: Agent,
+    client: Client,
     urls: HashSet<Url>,
     visited: HashSet<Url>,
     wait: Duration,
 }
 
 impl SitemapCrawler {
-    pub(crate) fn new(user_agent: &str, timeout: Duration, wait: Duration) -> Self {
+    pub(crate) fn new(client: Client, wait: Duration) -> Self {
         Self {
-            agent: AgentBuilder::new()
-                .user_agent(user_agent)
-                .timeout(timeout)
-                .build(),
+            client,
             urls: HashSet::new(),
             visited: HashSet::new(),
             wait,
@@ -32,7 +29,12 @@ impl SitemapCrawler {
             Ok(None)
         } else {
             self.visited.insert(url.clone());
-            let body = self.agent.get(url.as_str()).call()?.into_string()?;
+            let body = self
+                .client
+                .get(url.as_str())
+                .send()?
+                .error_for_status()?
+                .text()?;
             sleep(self.wait);
             Ok(Some(body))
         }
